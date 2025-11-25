@@ -29,19 +29,23 @@ def print_separator(title: str = ""):
         print(f"{'='*100}")
 
 
-def run_test_case(dial_client: DialClient, conversation: Conversation, test_name: str, user_query: str):
+def run_test_case(dial_client: DialClient, test_name: str, user_query: str):
     print_separator(f"TEST: {test_name}")
     print(f"User Query: {user_query}")
     
+    # Create a fresh conversation for each test to avoid context length issues
+    test_conversation = Conversation()
+    test_conversation.add_message(Message(role=Role.SYSTEM, content=SYSTEM_PROMPT))
+    
     # Add User message
-    conversation.add_message(Message(role=Role.USER, content=user_query))
+    test_conversation.add_message(Message(role=Role.USER, content=user_query))
     
     try:
         # Get assistant response
-        assistant_response = dial_client.get_completion(conversation.get_messages(), print_request=False)
+        assistant_response = dial_client.get_completion(test_conversation.get_messages(), print_request=False)
         
         # Add Assistant message
-        conversation.add_message(assistant_response)
+        test_conversation.add_message(assistant_response)
         
         print(f"\n✅ Assistant Response:\n{assistant_response.content}")
         print(f"\n{'='*100}")
@@ -77,9 +81,6 @@ def main():
         ]
     )
     
-    # Create Conversation with System message
-    conversation = Conversation()
-    conversation.add_message(Message(role=Role.SYSTEM, content=SYSTEM_PROMPT))
     print("✅ DIAL Client initialized with all tools")
     
     print_separator("Starting Automated Tests")
@@ -88,21 +89,21 @@ def main():
     
     # Test 1: Web Search Tool
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Web Search - Who is Andrej Karpathy?",
         "Who is Andrej Karpathy? Please search the web for information about him."
     ))
     
     # Test 2: Search Users Tool
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Search Users by Name",
         "Search for users with the name John"
     ))
     
     # Test 3: Add New User (Andrej Karpathy)
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Create User - Add Andrej Karpathy",
         "Add Andrej Karpathy as a new user. Use web search to find information about him. "
         "His email should be andrej.karpathy@example.com, and include relevant details from your search in the about_me field."
@@ -110,35 +111,35 @@ def main():
     
     # Test 4: Search for the newly created user
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Search for Andrej Karpathy",
         "Search for users with the surname Karpathy"
     ))
     
     # Test 5: Get User by ID (assuming user with ID 1 exists)
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Get User by ID",
         "Get the user information for user ID 1"
     ))
     
     # Test 6: Update User
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Update User Information",
         "Update user ID 1's company to 'EPAM Systems'"
     ))
     
     # Test 7: Search by Gender
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Search Users by Gender",
         "Find all male users in the system"
     ))
     
     # Test 8: Complex Query - Search and Enrich
     test_results.append(run_test_case(
-        dial_client, conversation,
+        dial_client,
         "Complex Query - User Profile Enhancement",
         "Search for users with surname 'Adams' and provide additional context about any notable person with that name using web search"
     ))
